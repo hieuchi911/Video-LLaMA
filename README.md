@@ -171,7 +171,7 @@ For now, the fine-tuning dataset consists of:
 * 11K video-based instructions from VideoChat [[link](https://github.com/OpenGVLab/InternVideo/tree/main/Data/instruction_data)]
 
 #### Script
-Config the checkpoint and dataset paths in [visionbranch_stage2_pretrain.yaml](./train_configs/visionbranch_stage2_pretrain.yaml) and [audiobranch_stage2_pretrain.yaml](audiobranch_stage2_pretrain.yaml) respectively. Then, run the following script:
+Config the checkpoint and dataset paths in [visionbranch_stage2_finetune.yaml](./train_configs/visionbranch_stage2_finetune.yaml) and [audiobranch_stage2_finetune.yaml](./train_configs/audiobranch_stage2_finetune.yaml) respectively. Then, run the following script:
 ```
 conda activate videollama
 # for fine-tuning VL branch
