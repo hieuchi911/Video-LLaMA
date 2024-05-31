@@ -27,7 +27,7 @@ Explanations on model details (the components, the steps in creating the model, 
   conda env create -f environment.yml
   conda activate videollama
   ```
-  - might need to reinstall `torchaudio`: `pip install -U torch torchaudio --no-cache-dir` ([ref](https://github.com/pytorch/pytorch/issues/91186#issuecomment-1791766605))
+  - might need to reinstall `torchaudio`: `pip install -U torch torchaudio --no-cache-dir` if encounter `OSError: libtorch_cuda_cpp.so: cannot open shared object file: No such file or directory` ([ref](https://github.com/pytorch/pytorch/issues/91186#issuecomment-1791766605))
 
 ## Finetune Video-LLaMA on instruction video dataset (action recognition)
 
@@ -155,13 +155,14 @@ Therefore, the framework requires an annotation json file that stores mappings o
     - `ckpt`: path to the checkpoint of the pretrained vision branch model (download the pretrained **visual branch** of Video-LLaMA model ([7B](https://huggingface.co/DAMO-NLP-SG/Video-LLaMA-2-7B-Pretrained) or [13B](https://huggingface.co/DAMO-NLP-SG/Video-LLaMA-2-13B-Pretrained)), and pass the path to `ckpt`, e.g. `./ckpts/VL_LLaMA_2_13B_Pretrained.pth`.),
     - `end_sym`, `prompt_path`, `prompt_template`: prompt template for either llama 2 or vicuna model,
   - for `datasets` configuration, we need to specify the type of dataset builders to use, which in our case, we just need to build an instruction dataset for video, aka `webvid_instruct`. Important attributes to pass to a `webvid_instruct` builder are:
-    - `build_info.anno_dir`: the path to the video annotation json file
-    - `build_info.video_dif`: the path to the directory that stores all videos
+    - `build_info.anno_dir`: the path to the video annotation json file prepared in the Data Preparation step
+    - `build_info.video_dif`: the path to the directory that stores all videos prepared in the Data Preparation step
     - `vis_processor.train.n_frms`: the number of frames to take from each video, note that this number should be smaller than the number of frames of the shortest video
     - `tokenizer_name`: the text tokenizer corresponding to the language decoder model
     - `model_type`: the language decoder model type, (`llama` or `vicuna`)
   - for `run` configuration, we specify the task and other related experiment related parameters (). important attributes are:
     - `task`: the task to train VideoLLaMA on, either `image_text_pretrain` or `video_text_pretrain`
+    - `iters_per_epoch`: number of iteration per an epoch, which can be set to `num_data / (batch_size * num_workers)`
     - other training hyperparameters: lr scheduler, lr, seed, weight decay, etc.
     - other parameters for distributed experiments: `world_size` aka the number of parallel processes to run, `dist_url` specifies the rendezvous environment (`"env://"` refers to the virtual environment, so env variables related to the distributed experiments are stored in the virtual environment), `distributed` to enable/disable this.
 
