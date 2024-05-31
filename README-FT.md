@@ -1,6 +1,11 @@
 # A GUIDE TO USE FINETUNE VIDEOLLAMA ON CUSTOMIZED DATASETS
 
-This document walks you through preparing the instruction dataset for the task of human action recognition, configuring the finetuning experiments, and launching the experiments. The goal is to create a vision language model that is capable of generating suitable low-level modes (in controlling robots), taking into account the visual context. For example, being able to distinguish the movement of one's hand to-and-fro as in greeting or as in cleaning a glass door.
+This document walks you through 3 steps to create a vision language model that is capable of generating suitable low-level modes (in controlling robots), taking into account the visual context. For example, being able to distinguish the movement of one's hand to-and-fro as in greeting or as in cleaning a glass door:
+- preparing the instruction dataset (for the task of human action recognition)
+- configuring the finetuning experiments
+- launching the experiments
+
+Explanations on model details (the components, the steps in creating the model, the setting up of the environment) are adaptated from the main [README.md](README.md) file.
 
 ## Preface - the model
 - Video-LLaMA is an Audio-Visual Language Model for video understanding.
@@ -12,7 +17,7 @@ This document walks you through preparing the instruction dataset for the task o
   - Trainable layers are: Video Q-Former and Audio Q-Former (for computing video/audio representations), positional embedding layers, and linear layers.
 
 ## Setting up
-- Install ffmpeg as instructed:
+- Install `ffmpeg` as instructed in [README.md](README.md):
   ```
   apt update
   apt install ffmpeg
@@ -27,23 +32,27 @@ This document walks you through preparing the instruction dataset for the task o
 ## Finetune Video-LLaMA on instruction video dataset (action recognition)
 
 ### Data preparation
-- We construct a simple instruction dataset from the [video dataset about human actions](https://www.kaggle.com/datasets/ngoduy/dataset-video-for-human-action-recognition):
-  - Videos are divided into different folders, each corresponds to a certain action
-  - We construct an instruction sequence based on which folder a video belongs to
-- Aside from videos, the framework also requires an annotation json file that stores mappings of their respective question and answer pairs (question and answer pairs are used as instructions for training the model). An example of an entry in the annotation file is as below:
+We construct a simple instruction dataset from the [video dataset about human actions](https://www.kaggle.com/datasets/ngoduy/dataset-video-for-human-action-recognition) (this dataset divides videos into different folders, each corresponds to a certain action), which comprises of 2 main parts:
+  - The videos: video inputs to VideoLLaMA.
+  - The instructions: instruction text sequences (based on which folder a video belongs to).
+
+Therefore, the framework requires an annotation json file that stores mappings of the videos' respective question and answer pairs. An example of an entry in the annotation file is as below:
   ```json
   {
-      "video": "train_fall_down_video_127.avi",
-      "QA": [
-          {
-              "q": "What is the action shown in the displayed video.",
-              "a": "Fall down"
-          }
-      ]
+    "video": "train_fall_down_video_127.avi",
+    "QA": [
+        {
+            "q": "What is the action shown in the displayed video.",
+            "a": "Fall down"
+        }
+    ]
   }
   ```
-  , where `"video"` is the path to the input video, and `"QA"` is a list of question and answer pairs about the video (when there's more than 1 pair, this will be considered a conversation about the video, which we don't necessarily need in our case).
-  - We can prompt engineering the questions `"q"` in a way that allows the optimal training of the model. For answers `"a"`, simply use the corresponding label of the video.
+  , where:
+  - `"video"`: path to the input video,
+  - `"QA"`: list of question-answer pairs about the video (when there's more than 1 pair, this will be considered a conversation about the video, which we don't necessarily need in our case):
+    - `"q"`: the question used in the instruction finetuning paradigm, simply a question asking what the action seem to be in the video.
+    - `"a"`: simply the corresponding label of the action shown in the video.
 
 ### Configure the experiment
 - We finetune Video-LLaMA visual branch on the prepared dataset, which can be done by simply updating the configuration file [visionbranch_stage2_finetune.yaml](train_configs/visionbranch_stage2_finetune.yaml). Here we configure the experiments in terms of the model, the datasets to use, and the running environment:
@@ -168,4 +177,6 @@ This document walks you through preparing the instruction dataset for the task o
     ```
 ### Next steps
 - This guide focuses on a sample task of action recognition, using the public dataset for human action detection. However, these videos are very short. Further augmentation to extend the length of these videos or using a better dataset can be considered.
-- The annotated questions `"q"` should be prompt engineered for better finetuning performance, instead of a simple question `"What is the action shown in the displayed video?"`.
+- We can prompt engineer `"q"` and `"a"` a way that allows the optimal training of the model, e.g.:
+  - `"q"`: use varied questions instead of a simple question `"What is the action shown in the displayed video?"`,
+  - `"a"`: use better explained answers (e.g. explain the movement in human language and conclude the label, which requires more effort in augmenting the answer set whether with crowdsourcing or with AI).
