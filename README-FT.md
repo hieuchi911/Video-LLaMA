@@ -230,8 +230,8 @@ Launch the inference pipeline:
 
 Below are some demo videos of the finetuned VideoLLaMA on test data, note how the input text from the user is `"What is the action shown in the displayed video?"`, which is the instruction used for finetuning the model:
 <p align="center" width="100%">
-<video src="figs/demo-falldown.mp4" controls preload></video> </br> </br>
-<video src="figs/demo-walking.mp4" controls preload></video>
+<img src="figs/demo-falldown.gif" controls preload></video> </br> </br>
+<img src="figs/demo-walking.gif" controls preload></video>
 </p>
 
 ## Next steps
