@@ -42,7 +42,7 @@ Therefore, the framework requires an annotation json file that stores mappings o
     "video": "train_fall_down_video_127.avi",
     "QA": [
         {
-            "q": "What is the action shown in the displayed video.",
+            "q": "What is the action shown in the displayed video?",
             "a": "Fall down"
         }
     ]
@@ -176,7 +176,65 @@ Therefore, the framework requires an annotation json file that stores mappings o
     ```
     srun torchrun --nnodes 2 --nproc_per_node 2 --rdzv_id $RANDOM --rdzv_backend c10d --rdzv_endpoint $head_node_ip:29603 train.py --cfg-path  ./train_configs/visionbranch_stage2_finetune.yaml
     ```
-### Next steps
+## Inference
+
+### Configure the inference pipeline
+After finetuning Video-LLaMA visual branch on the prepared dataset, configure the inference pipeline for use with `demo_video.py` that launches a `gradio` server for hosting the finetuned model. The inference configuration [video_llama_eval_only_vl.yaml](eval_configs/video_llama_eval_only_vl.yaml) is as follows:
+  ```yml
+  model:
+    arch: video_llama
+    model_type: pretrain_llama_v2
+    freeze_vit: True
+    freeze_qformer: True
+    max_txt_len: 512
+    end_sym: "###"
+    low_resource: False
+
+    frozen_llama_proj: False
+
+    # If you want use LLaMA-2-chat,
+    # some ckpts could be download from our provided huggingface repo
+    # i.e.  https://huggingface.co/DAMO-NLP-SG/Video-LLaMA-2-13B-Finetuned
+    llama_model: "meta-llama/Llama-2-7b-chat-hf"
+    ckpt: 'video_llama/output/videollama_stage2_finetune/20240531153/checkpoint_0.pth'   # you can use our pretrained ckpt from https://huggingface.co/DAMO-NLP-SG/Video-LLaMA-2-13B-Pretrained/
+    equip_audio_branch: False
+
+    fusion_head_layers: 2
+    max_frame_pos: 32
+    fusion_header_type: "seqTransf"
+
+  datasets:
+    webvid:
+      vis_processor:
+        train:
+          name: "alpro_video_eval"
+          n_frms: 8
+          image_size: 224
+      text_processor:
+        train:
+          name: "blip_caption"
+
+  run:
+    task: video_text_pretrain
+
+  ```
+  , which largely resembles the finetuning configuration above:
+  - `model` configuration: use the path to the newly finetuned model, `"video_llama/output/videollama_stage2_finetune/20240531153/checkpoint_0.pth"`, for `ckpt`
+  - `datasets` configuration: use `webvid` as the dataset builder for inference
+
+Launch the inference pipeline:
+  ```
+  python demo_video.py --cfg-path eval_configs/video_llama_eval_only_vl.yaml --model_type llama_v2 --gpu-id 0
+  ```
+  , the model will be running on GPU device 0. `Gradio` will host the chat service and return local URL for the service (to get public URLs, set `share=True` at `demo.launch()` in the [demo_video.py](demo_video.py))
+
+Below are some demo videos of the finetuned VideoLLaMA on test data, note how the input text from the user is `"What is the action shown in the displayed video?"`, which is the instruction used for finetuning the model:
+<p align="center" width="100%">
+<video src="figs/demo-falldown.mp4" controls preload></video> </br> </br>
+<video src="figs/demo-walking.mp4" controls preload></video>
+</p>
+
+## Next steps
 - This guide focuses on a sample task of action recognition, using the public dataset for human action detection. However, these videos are very short. Further augmentation to extend the length of these videos or using a better dataset can be considered.
 - We can prompt engineer `"q"` and `"a"` a way that allows the optimal training of the model, e.g.:
   - `"q"`: use varied questions instead of a simple question `"What is the action shown in the displayed video?"`,
